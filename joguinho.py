@@ -38,12 +38,17 @@ player_altura = 80
 player_x = largura // 2 - player_largura // 2
 player_y = altura - player_altura - 30
 player_velocidade = 7
+image_player = pygame.image.load('assets/imagens/user.png').convert()
+image_player = pygame.transform.scale(image_player, (70, 120))
+
 
 # Carros inimigos
 enemy_largura = 50
 enemy_altura = 80
 enemy_velocidade = 5
 enemy_list = []
+image_enemy = pygame.image.load('assets/imagens/policia.png').convert()
+image_enemy = pygame.transform.scale(image_enemy, (70, 120))
 
 spawn_timer = pygame.USEREVENT + 1
 pygame.time.set_timer(spawn_timer, 1500)
@@ -109,9 +114,9 @@ while game:
     if estado == inicio:
         window.fill(preto)
 
-        image = pygame.image.load('assets/imagens/explosao.png').convert()
-        image = pygame.transform.scale(image, (125, 166))
-        window.blit(image, (270, 20))
+        image_explosao = pygame.image.load('assets/imagens/explosao.png').convert()
+        image_explosao = pygame.transform.scale(image_explosao, (125, 166))
+        window.blit(image_explosao, (270, 20))
 
         title_text = font.render('INSPER', True, branco)
         title_rect = title_text.get_rect(center=(largura // 2, 150))
@@ -146,10 +151,12 @@ while game:
 
         # Desenha carrinho do jogador
         pygame.draw.rect(window, (0, 200, 0), (player_x, player_y, player_largura, player_altura))
+        window.blit(image_player, (player_x, player_y))
 
         # Desenha inimigos
         for enemy in enemy_list:
             pygame.draw.rect(window, vermelho, enemy)
+            window.blit(image_enemy, (enemy.x, enemy.y))
 
         # Mostra pontuação
         score_text = small_font.render(f"Pontos: {score}", True, branco)
