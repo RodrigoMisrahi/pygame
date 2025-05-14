@@ -5,8 +5,8 @@ import random
 pygame.init()
 
 # Constantes
-WIDTH = 500
-HEIGHT = 720
+largura = 500
+altura = 720
 branco = (255, 255, 255)
 preto = (0, 0, 0)
 azulescuro = (10, 10, 80)
@@ -14,7 +14,7 @@ cinza = (200, 200, 200)
 vermelho = (200, 0, 0)
 
 # Tela principal
-window = pygame.display.set_mode((WIDTH, HEIGHT))
+window = pygame.display.set_mode((largura, altura))
 pygame.display.set_caption('Joguinho')
 
 # Fontes
@@ -33,16 +33,16 @@ rankings = 'rankings'
 estado = inicio
 
 # Carrinho do jogador
-player_width = 50
-player_height = 80
-player_x = WIDTH // 2 - player_width // 2
-player_y = HEIGHT - player_height - 30
-player_speed = 7
+player_largura = 50
+player_altura = 80
+player_x = largura // 2 - player_largura // 2
+player_y = altura - player_altura - 30
+player_velocidade = 7
 
 # Carros inimigos
-enemy_width = 50
-enemy_height = 80
-enemy_speed = 5
+enemy_largura = 50
+enemy_altura = 80
+enemy_velocidade = 5
 enemy_list = []
 
 spawn_timer = pygame.USEREVENT + 1
@@ -68,7 +68,7 @@ while game:
                 if play_button.collidepoint(event.pos):
                     estado = jogo
                     # Reset do jogo
-                    player_x = WIDTH // 2 - player_width // 2
+                    player_x = largura // 2 - player_largura // 2
                     enemy_list = []
                     start_ticks = pygame.time.get_ticks()
                     score = 0
@@ -78,43 +78,47 @@ while game:
                 if back_button.collidepoint(event.pos):
                     estado = inicio
         elif estado == jogo and event.type == spawn_timer:
-            x_pos = random.randint(0, WIDTH - enemy_width)
-            enemy_list.append(pygame.Rect(x_pos, -enemy_height, enemy_width, enemy_height))
+            x_pos = random.randint(0, largura - enemy_largura)
+            enemy_list.append(pygame.Rect(x_pos, -enemy_altura, enemy_largura, enemy_altura))
 
     keys = pygame.key.get_pressed()
     if estado == jogo:
         if keys[pygame.K_LEFT] and player_x > 0:
-            player_x -= player_speed
-        if keys[pygame.K_RIGHT] and player_x < WIDTH - player_width:
-            player_x += player_speed
+            player_x -= player_velocidade
+        if keys[pygame.K_RIGHT] and player_x < largura - player_largura:
+            player_x += player_velocidade
 
         # Atualiza inimigos
         for enemy in enemy_list:
-            enemy.y += enemy_speed
+            enemy.y += enemy_velocidade
 
         # Colisão
-        player_rect = pygame.Rect(player_x, player_y, player_width, player_height)
+        player_rect = pygame.Rect(player_x, player_y, player_largura, player_altura)
         for enemy in enemy_list:
             if player_rect.colliderect(enemy):
                 estado = inicio
 
         # Remove carros fora da tela
-        enemy_list = [enemy for enemy in enemy_list if enemy.y < HEIGHT]
+        enemy_list = [enemy for enemy in enemy_list if enemy.y < altura]
 
         # Atualiza pontuação
-        seconds_passed = (pygame.time.get_ticks() - start_ticks) // 100
+        seconds_passed = (pygame.time.get_ticks() - start_ticks) // 25
         score = seconds_passed
 
     # Desenho das telas
     if estado == inicio:
         window.fill(preto)
 
-        title_text = font.render('INSPER', True, vermelho)
-        title_rect = title_text.get_rect(center=(WIDTH // 2, 150))
+        image = pygame.image.load('assets/imagens/explosao.png').convert()
+        image = pygame.transform.scale(image, (125, 166))
+        window.blit(image, (270, 20))
+
+        title_text = font.render('INSPER', True, branco)
+        title_rect = title_text.get_rect(center=(largura // 2, 150))
         window.blit(title_text, title_rect)
 
-        title_text = font.render('SMASH', True, vermelho)
-        title_rect = title_text.get_rect(center=(WIDTH // 2, 120))
+        title_text = font.render('SMASH', True, branco)
+        title_rect = title_text.get_rect(center=(largura // 2, 120))
         window.blit(title_text, title_rect)
 
         pygame.draw.rect(window, cinza, play_button)
@@ -129,8 +133,19 @@ while game:
     elif estado == jogo:
         window.fill(preto)
 
+        # Desenha faixas tracejadas (duas linhas verticais)
+        lane_width = largura // 3
+        line_color = branco
+        dash_height = 20
+        dash_gap = 20
+        for x in [lane_width, lane_width * 2]:
+            y = 0
+            while y < altura:
+                pygame.draw.line(window, line_color, (x, y), (x, y + dash_height), 5)
+                y += dash_height + dash_gap
+
         # Desenha carrinho do jogador
-        pygame.draw.rect(window, (0, 200, 0), (player_x, player_y, player_width, player_height))
+        pygame.draw.rect(window, (0, 200, 0), (player_x, player_y, player_largura, player_altura))
 
         # Desenha inimigos
         for enemy in enemy_list:
