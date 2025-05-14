@@ -82,7 +82,15 @@ while game:
         if keys[pygame.K_RIGHT] and player_x < WIDTH - player_width:
             player_x += player_speed
 
-        
+        # Move inimigos
+        for enemy in enemy_list:
+            enemy.y += enemy_speed
+
+        # Colisão
+        player_rect = pygame.Rect(player_x, player_y, player_width, player_height)
+        for enemy in enemy_list:
+            if player_rect.colliderect(enemy):
+                estado = inicio
 
         # Remove inimigos que saíram da tela
         enemy_list = [enemy for enemy in enemy_list if enemy.y < HEIGHT]
