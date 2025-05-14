@@ -134,15 +134,15 @@ while game:
         window.fill(preto)
 
         # Desenha faixas tracejadas (duas linhas verticais)
-        lane_width = largura // 3
-        line_color = branco
-        dash_height = 20
-        dash_gap = 20
-        for x in [lane_width, lane_width * 2]:
+        linha_largura = largura // 3
+        linha_cor = branco
+        traco_altura = 20
+        traco_espaco = 20
+        for x in [linha_largura, linha_largura * 2]:
             y = 0
             while y < altura:
-                pygame.draw.line(window, line_color, (x, y), (x, y + dash_height), 5)
-                y += dash_height + dash_gap
+                pygame.draw.line(window, linha_cor, (x, y), (x, y + traco_altura), 5)
+                y += traco_altura + traco_espaco
 
         # Desenha carrinho do jogador
         pygame.draw.rect(window, (0, 200, 0), (player_x, player_y, player_largura, player_altura))
