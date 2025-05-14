@@ -41,20 +41,27 @@ player_velocidade = 7
 image_player = pygame.image.load('assets/imagens/user.png').convert()
 image_player = pygame.transform.scale(image_player, (70, 120))
 
-
 # Carros inimigos
 enemy_largura = 50
 enemy_altura = 80
-enemy_velocidade = 5
 enemy_list = []
 image_enemy = pygame.image.load('assets/imagens/policia.png').convert()
 image_enemy = pygame.transform.scale(image_enemy, (70, 120))
+enemy_velocidade = 3
+spawn_interval = 1500  # milissegundos
+min_spawn_interval = 400
+max_enemy_speed = 12
 
+# Estrelas
+estrela_img = pygame.image.load('assets/imagens/estrela.png').convert_alpha()
+estrela_img = pygame.transform.scale(estrela_img, (40, 40))
+
+# Temporizador de spawn
 spawn_timer = pygame.USEREVENT + 1
-pygame.time.set_timer(spawn_timer, 1500)
+pygame.time.set_timer(spawn_timer, spawn_interval)
 
 # Pontuação
-start_ticks = 0  # ticks quando o jogo começa
+start_ticks = 0
 score = 0
 
 # Clock
@@ -77,6 +84,9 @@ while game:
                     enemy_list = []
                     start_ticks = pygame.time.get_ticks()
                     score = 0
+                    enemy_velocidade = 3
+                    spawn_interval = 1500
+                    pygame.time.set_timer(spawn_timer, spawn_interval)
                 elif rankings_button.collidepoint(event.pos):
                     estado = rankings
             elif estado == rankings:
@@ -110,6 +120,17 @@ while game:
         seconds_passed = (pygame.time.get_ticks() - start_ticks) // 25
         score = seconds_passed
 
+        # Aumenta velocidade e reduz intervalo com base na pontuação
+        nova_velocidade = 3 + (score // 500)
+        if nova_velocidade != enemy_velocidade and nova_velocidade <= max_enemy_speed:
+            enemy_velocidade = nova_velocidade
+
+        novo_intervalo = 1500 - (score // 500) * 100
+        novo_intervalo = max(min_spawn_interval, novo_intervalo)
+        if novo_intervalo != spawn_interval:
+            spawn_interval = novo_intervalo
+            pygame.time.set_timer(spawn_timer, spawn_interval)
+
     # Desenho das telas
     if estado == inicio:
         window.fill(preto)
@@ -138,29 +159,31 @@ while game:
     elif estado == jogo:
         window.fill(preto)
 
-        # Desenha faixas tracejadas (duas linhas verticais)
+        # Faixas tracejadas
         linha_largura = largura // 3
-        linha_cor = branco
         traco_altura = 20
         traco_espaco = 20
         for x in [linha_largura, linha_largura * 2]:
             y = 0
             while y < altura:
-                pygame.draw.line(window, linha_cor, (x, y), (x, y + traco_altura), 5)
+                pygame.draw.line(window, branco, (x, y), (x, y + traco_altura), 5)
                 y += traco_altura + traco_espaco
 
-        # Desenha carrinho do jogador
-        pygame.draw.rect(window, (0, 200, 0), (player_x, player_y, player_largura, player_altura))
+        # Carrinho do jogador
         window.blit(image_player, (player_x, player_y))
 
-        # Desenha inimigos
+        # Inimigos
         for enemy in enemy_list:
-            pygame.draw.rect(window, vermelho, enemy)
             window.blit(image_enemy, (enemy.x, enemy.y))
 
-        # Mostra pontuação
+        # Pontuação
         score_text = small_font.render(f"Pontos: {score}", True, branco)
         window.blit(score_text, (20, 20))
+
+        # Estrelas no canto superior direito
+        num_estrelas = min(score // 1000, 5)
+        for i in range(num_estrelas):
+            window.blit(estrela_img, (largura - 50 - i * 45, 20))
 
     elif estado == rankings:
         window.fill(azulescuro)
