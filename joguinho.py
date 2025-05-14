@@ -198,3 +198,6 @@ while game:
 pygame.quit()
 
 #poderes: escudo, vida extra, carros mais devagares, menos carros na tela, 
+#quando colidir fazer animação de explosão
+#colocar fundos na tela inicial e na de rankings
+#cpa fazer uma paisagem na tela de jogo
