@@ -102,7 +102,7 @@ while game:
 
         # Dificuldade progressiva
         qtd_inimigos_desejada = min(1 + (score // 500), max_inimigos)
-        velocidade_maxima = 5 + (score // 200)
+        velocidade_maxima = 5 + (score // 500)
 
         # Spawn de inimigos se houver espaço
         if len(enemy_list) < qtd_inimigos_desejada and tempo_atual - tempo_ultimo_spawn > intervalo_spawn:
