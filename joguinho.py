@@ -125,7 +125,7 @@ while game:
         if nova_velocidade != enemy_velocidade and nova_velocidade <= max_enemy_speed:
             enemy_velocidade = nova_velocidade
 
-        novo_intervalo = 1500 - (score // 500) * 100
+        novo_intervalo = 1500 - (score // 250) * 100
         novo_intervalo = max(min_spawn_interval, novo_intervalo)
         if novo_intervalo != spawn_interval:
             spawn_interval = novo_intervalo
