@@ -17,7 +17,7 @@ vermelho = (200, 0, 0)
 window = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption('Joguinho')
 
-# Fonte
+# Fontes
 font = pygame.font.SysFont(None, 48)
 small_font = pygame.font.SysFont(None, 36)
 
@@ -46,7 +46,11 @@ enemy_speed = 5
 enemy_list = []
 
 spawn_timer = pygame.USEREVENT + 1
-pygame.time.set_timer(spawn_timer, 1500)  # Novo inimigo a cada 1.5s
+pygame.time.set_timer(spawn_timer, 1500)
+
+# Pontuação
+start_ticks = 0  # ticks quando o jogo começa
+score = 0
 
 # Clock
 clock = pygame.time.Clock()
@@ -66,6 +70,8 @@ while game:
                     # Reset do jogo
                     player_x = WIDTH // 2 - player_width // 2
                     enemy_list = []
+                    start_ticks = pygame.time.get_ticks()
+                    score = 0
                 elif rankings_button.collidepoint(event.pos):
                     estado = rankings
             elif estado == rankings:
@@ -82,7 +88,7 @@ while game:
         if keys[pygame.K_RIGHT] and player_x < WIDTH - player_width:
             player_x += player_speed
 
-        # Move inimigos
+        # Atualiza inimigos
         for enemy in enemy_list:
             enemy.y += enemy_speed
 
@@ -92,15 +98,23 @@ while game:
             if player_rect.colliderect(enemy):
                 estado = inicio
 
-        # Remove inimigos que saíram da tela
+        # Remove carros fora da tela
         enemy_list = [enemy for enemy in enemy_list if enemy.y < HEIGHT]
 
-    # Desenhos
+        # Atualiza pontuação
+        seconds_passed = (pygame.time.get_ticks() - start_ticks) // 100
+        score = seconds_passed
+
+    # Desenho das telas
     if estado == inicio:
         window.fill(preto)
 
-        title_text = font.render('Joguinho', True, (255, 0, 0))
+        title_text = font.render('INSPER', True, vermelho)
         title_rect = title_text.get_rect(center=(WIDTH // 2, 150))
+        window.blit(title_text, title_rect)
+
+        title_text = font.render('SMASH', True, vermelho)
+        title_rect = title_text.get_rect(center=(WIDTH // 2, 120))
         window.blit(title_text, title_rect)
 
         pygame.draw.rect(window, cinza, play_button)
@@ -115,12 +129,16 @@ while game:
     elif estado == jogo:
         window.fill(preto)
 
-        # Desenha jogador
+        # Desenha carrinho do jogador
         pygame.draw.rect(window, (0, 200, 0), (player_x, player_y, player_width, player_height))
 
         # Desenha inimigos
         for enemy in enemy_list:
             pygame.draw.rect(window, vermelho, enemy)
+
+        # Mostra pontuação
+        score_text = small_font.render(f"Pontos: {score}", True, branco)
+        window.blit(score_text, (20, 20))
 
     elif estado == rankings:
         window.fill(azulescuro)
@@ -131,3 +149,5 @@ while game:
     pygame.display.update()
 
 pygame.quit()
+
+#poderes: escudo, vida extra, carros mais devagares, menos carros na tela, 
