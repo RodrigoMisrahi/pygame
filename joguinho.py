@@ -13,7 +13,7 @@ azulescuro = (10, 10, 80)
 cinza = (200, 200, 200)
 vermelho = (200, 0, 0)
 
-# Tela principal
+# Tela
 window = pygame.display.set_mode((largura, altura))
 pygame.display.set_caption('Joguinho')
 
@@ -44,21 +44,18 @@ image_player = pygame.transform.scale(image_player, (70, 120))
 # Carros inimigos
 enemy_largura = 50
 enemy_altura = 80
-enemy_list = []
 image_enemy = pygame.image.load('assets/imagens/policia.png').convert()
 image_enemy = pygame.transform.scale(image_enemy, (70, 120))
-enemy_velocidade = 3
-spawn_interval = 1500  # milissegundos
-min_spawn_interval = 400
-max_enemy_speed = 12
 
-# Estrelas
+# Estrela
 estrela_img = pygame.image.load('assets/imagens/estrela.png').convert_alpha()
-estrela_img = pygame.transform.scale(estrela_img, (40, 40))
+estrela_img = pygame.transform.scale(estrela_img, (30, 30))
 
-# Temporizador de spawn
-spawn_timer = pygame.USEREVENT + 1
-pygame.time.set_timer(spawn_timer, spawn_interval)
+# Lista de inimigos (cada inimigo é um dicionário com rect e velocidade)
+enemy_list = []
+max_inimigos = 7
+tempo_ultimo_spawn = 0
+intervalo_spawn = 600  # ms entre spawns (mínimo)
 
 # Pontuação
 start_ticks = 0
@@ -71,6 +68,7 @@ clock = pygame.time.Clock()
 game = True
 while game:
     clock.tick(60)
+    tempo_atual = pygame.time.get_ticks()
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -84,17 +82,12 @@ while game:
                     enemy_list = []
                     start_ticks = pygame.time.get_ticks()
                     score = 0
-                    enemy_velocidade = 3
-                    spawn_interval = 1500
-                    pygame.time.set_timer(spawn_timer, spawn_interval)
+                    tempo_ultimo_spawn = 0
                 elif rankings_button.collidepoint(event.pos):
                     estado = rankings
             elif estado == rankings:
                 if back_button.collidepoint(event.pos):
                     estado = inicio
-        elif estado == jogo and event.type == spawn_timer:
-            x_pos = random.randint(0, largura - enemy_largura)
-            enemy_list.append(pygame.Rect(x_pos, -enemy_altura, enemy_largura, enemy_altura))
 
     keys = pygame.key.get_pressed()
     if estado == jogo:
@@ -103,33 +96,44 @@ while game:
         if keys[pygame.K_RIGHT] and player_x < largura - player_largura:
             player_x += player_velocidade
 
-        # Atualiza inimigos
-        for enemy in enemy_list:
-            enemy.y += enemy_velocidade
-
-        # Colisão
-        player_rect = pygame.Rect(player_x, player_y, player_largura, player_altura)
-        for enemy in enemy_list:
-            if player_rect.colliderect(enemy):
-                estado = inicio
-
-        # Remove carros fora da tela
-        enemy_list = [enemy for enemy in enemy_list if enemy.y < altura]
-
         # Atualiza pontuação
         seconds_passed = (pygame.time.get_ticks() - start_ticks) // 25
         score = seconds_passed
 
-        # Aumenta velocidade e reduz intervalo com base na pontuação
-        nova_velocidade = 3 + (score // 500)
-        if nova_velocidade != enemy_velocidade and nova_velocidade <= max_enemy_speed:
-            enemy_velocidade = nova_velocidade
+        # Dificuldade progressiva
+        qtd_inimigos_desejada = min(1 + (score // 500), max_inimigos)
+        velocidade_maxima = 5 + (score // 200)
 
-        novo_intervalo = 1500 - (score // 500) * 100
-        novo_intervalo = max(min_spawn_interval, novo_intervalo)
-        if novo_intervalo != spawn_interval:
-            spawn_interval = novo_intervalo
-            pygame.time.set_timer(spawn_timer, spawn_interval)
+        # Spawn de inimigos se houver espaço
+        if len(enemy_list) < qtd_inimigos_desejada and tempo_atual - tempo_ultimo_spawn > intervalo_spawn:
+            # Geração segura de posição sem sobreposição
+            tentativas = 0
+            while tentativas < 20:
+                x_pos = random.randint(0, largura - enemy_largura)
+                novo_rect = pygame.Rect(x_pos, -enemy_altura, enemy_largura, enemy_altura)
+
+                sobrepoe = any(novo_rect.colliderect(e['rect']) for e in enemy_list)
+                if not sobrepoe:
+                    enemy_list.append({
+                        'rect': novo_rect,
+                        'velocidade': random.randint(3, velocidade_maxima)
+                    })
+                    tempo_ultimo_spawn = tempo_atual
+                    break
+                tentativas += 1
+
+        # Atualiza posição dos inimigos
+        for enemy in enemy_list:
+            enemy['rect'].y += enemy['velocidade']
+
+        # Colisão
+        player_rect = pygame.Rect(player_x, player_y, player_largura, player_altura)
+        for enemy in enemy_list:
+            if player_rect.colliderect(enemy['rect']):
+                estado = inicio
+
+        # Remove inimigos fora da tela
+        enemy_list = [enemy for enemy in enemy_list if enemy['rect'].y < altura]
 
     # Desenho das telas
     if estado == inicio:
@@ -140,19 +144,15 @@ while game:
         window.blit(image_explosao, (270, 20))
 
         title_text = font.render('INSPER', True, branco)
-        title_rect = title_text.get_rect(center=(largura // 2, 150))
-        window.blit(title_text, title_rect)
-
-        title_text = font.render('SMASH', True, branco)
-        title_rect = title_text.get_rect(center=(largura // 2, 120))
-        window.blit(title_text, title_rect)
+        window.blit(title_text, title_text.get_rect(center=(largura // 2, 120)))
+        title2_text = font.render('SMASH', True, branco)
+        window.blit(title2_text, title2_text.get_rect(center=(largura // 2, 160)))
 
         pygame.draw.rect(window, cinza, play_button)
         pygame.draw.rect(window, cinza, rankings_button)
 
         play_text = font.render("Jogar", True, preto)
         rankings_text = font.render("Rankings", True, preto)
-
         window.blit(play_text, (play_button.x + 50, play_button.y + 10))
         window.blit(rankings_text, (rankings_button.x + 30, rankings_button.y + 10))
 
@@ -169,21 +169,23 @@ while game:
                 pygame.draw.line(window, branco, (x, y), (x, y + traco_altura), 5)
                 y += traco_altura + traco_espaco
 
-        # Carrinho do jogador
+        # Jogador
+        pygame.draw.rect(window, (0, 200, 0), (player_x, player_y, player_largura, player_altura))
         window.blit(image_player, (player_x, player_y))
 
         # Inimigos
         for enemy in enemy_list:
-            window.blit(image_enemy, (enemy.x, enemy.y))
+            window.blit(image_enemy, (enemy['rect'].x, enemy['rect'].y))
 
         # Pontuação
         score_text = small_font.render(f"Pontos: {score}", True, branco)
         window.blit(score_text, (20, 20))
 
         # Estrelas no canto superior direito
-        num_estrelas = min(score // 1000, 5)
-        for i in range(num_estrelas):
-            window.blit(estrela_img, (largura - 50 - i * 45, 20))
+        estrelas = min(score // 1000, 5)
+        for i in range(estrelas):
+            x = largura - (i + 1) * 35
+            window.blit(estrela_img, (x, 20))
 
     elif estado == rankings:
         window.fill(azulescuro)
