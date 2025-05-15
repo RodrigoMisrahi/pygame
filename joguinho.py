@@ -136,8 +136,10 @@ while game:
         enemy_list = [enemy for enemy in enemy_list if enemy['rect'].y < altura]
 
     # Desenho das telas
+    telafundo = pygame.image.load('assets/imagens/WhatsApp Image 2025-05-15 at 16.57.15.jpeg').convert()
+    telafundo = pygame.transform.scale(telafundo, (largura, altura))
     if estado == inicio:
-        window.fill(preto)
+        window.blit(telafundo, (0, 0))
 
         image_explosao = pygame.image.load('assets/imagens/explosao.png').convert()
         image_explosao = pygame.transform.scale(image_explosao, (125, 166))
