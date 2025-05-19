@@ -57,9 +57,12 @@ max_inimigos = 7
 tempo_ultimo_spawn = 0
 intervalo_spawn = 600  # ms entre spawns (mínimo)
 
-# Pontuação
+# Pontuação e vidas
 start_ticks = 0
 score = 0
+vidas = 2
+ultima_colisao = 0
+invulnerabilidade_ms = 1000  # 1 segundo de invulnerabilidade
 
 # Clock
 clock = pygame.time.Clock()
@@ -82,6 +85,8 @@ while game:
                     enemy_list = []
                     start_ticks = pygame.time.get_ticks()
                     score = 0
+                    vidas = 2
+                    ultima_colisao = 0
                     tempo_ultimo_spawn = 0
                 elif rankings_button.collidepoint(event.pos):
                     estado = rankings
@@ -106,12 +111,10 @@ while game:
 
         # Spawn de inimigos se houver espaço
         if len(enemy_list) < qtd_inimigos_desejada and tempo_atual - tempo_ultimo_spawn > intervalo_spawn:
-            # Geração segura de posição sem sobreposição
             tentativas = 0
             while tentativas < 20:
                 x_pos = random.randint(0, largura - enemy_largura)
                 novo_rect = pygame.Rect(x_pos, -enemy_altura, enemy_largura, enemy_altura)
-
                 sobrepoe = any(novo_rect.colliderect(e['rect']) for e in enemy_list)
                 if not sobrepoe:
                     enemy_list.append({
@@ -126,11 +129,15 @@ while game:
         for enemy in enemy_list:
             enemy['rect'].y += enemy['velocidade']
 
-        # Colisão
+        # Colisão com invulnerabilidade
         player_rect = pygame.Rect(player_x, player_y, player_largura, player_altura)
         for enemy in enemy_list:
             if player_rect.colliderect(enemy['rect']):
-                estado = inicio
+                if tempo_atual - ultima_colisao > invulnerabilidade_ms:
+                    vidas -= 1
+                    ultima_colisao = tempo_atual
+                    if vidas <= 0:
+                        estado = inicio
 
         # Remove inimigos fora da tela
         enemy_list = [enemy for enemy in enemy_list if enemy['rect'].y < altura]
@@ -172,7 +179,6 @@ while game:
                 y += traco_altura + traco_espaco
 
         # Jogador
-        pygame.draw.rect(window, (0, 200, 0), (player_x, player_y, player_largura, player_altura))
         window.blit(image_player, (player_x, player_y))
 
         # Inimigos
@@ -183,7 +189,11 @@ while game:
         score_text = small_font.render(f"Pontos: {score}", True, branco)
         window.blit(score_text, (20, 20))
 
-        # Estrelas no canto superior direito
+        # Vidas
+        vidas_text = small_font.render(f"Vidas: {vidas}", True, branco)
+        window.blit(vidas_text, (20, 60))
+
+        # Estrelas
         estrelas = min(score // 1000, 5)
         for i in range(estrelas):
             x = largura - (i + 1) * 35
@@ -201,5 +211,4 @@ pygame.quit()
 
 #poderes: escudo, vida extra, carros mais devagares, menos carros na tela, 
 #quando colidir fazer animação de explosão
-#colocar fundos na tela inicial e na de rankings
 #cpa fazer uma paisagem na tela de jogo
