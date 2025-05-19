@@ -11,7 +11,6 @@ branco = (255, 255, 255)
 preto = (0, 0, 0)
 azulescuro = (10, 10, 80)
 cinza = (200, 200, 200)
-vermelho = (200, 0, 0)
 
 # Tela
 window = pygame.display.set_mode((largura, altura))
@@ -32,16 +31,16 @@ jogo = 'jogo'
 rankings = 'rankings'
 estado = inicio
 
-# Carrinho do jogador
+# Jogador
 player_largura = 50
 player_altura = 80
 player_x = largura // 2 - player_largura // 2
 player_y = altura - player_altura - 30
 player_velocidade = 7
-image_player = pygame.image.load('assets/imagens/user.png').convert()
+image_player = pygame.image.load('assets/imagens/user.png').convert_alpha()
 image_player = pygame.transform.scale(image_player, (70, 120))
 
-# Carros inimigos
+# Inimigo
 enemy_largura = 50
 enemy_altura = 80
 image_enemy = pygame.image.load('assets/imagens/policia.png').convert()
@@ -51,18 +50,22 @@ image_enemy = pygame.transform.scale(image_enemy, (70, 120))
 estrela_img = pygame.image.load('assets/imagens/estrela.png').convert_alpha()
 estrela_img = pygame.transform.scale(estrela_img, (30, 30))
 
-# Lista de inimigos (cada inimigo é um dicionário com rect e velocidade)
+# Coração (vida)
+coracao_img = pygame.image.load('assets/imagens/coracao.png').convert_alpha()
+coracao_img = pygame.transform.scale(coracao_img, (30, 30))
+
+# Lista de inimigos
 enemy_list = []
 max_inimigos = 7
 tempo_ultimo_spawn = 0
-intervalo_spawn = 600  # ms entre spawns (mínimo)
+intervalo_spawn = 600  # ms
 
 # Pontuação e vidas
 start_ticks = 0
 score = 0
 vidas = 2
 ultima_colisao = 0
-invulnerabilidade_ms = 1000  # 1 segundo de invulnerabilidade
+invulnerabilidade_ms = 1000
 
 # Clock
 clock = pygame.time.Clock()
@@ -80,7 +83,6 @@ while game:
             if estado == inicio:
                 if play_button.collidepoint(event.pos):
                     estado = jogo
-                    # Reset do jogo
                     player_x = largura // 2 - player_largura // 2
                     enemy_list = []
                     start_ticks = pygame.time.get_ticks()
@@ -101,7 +103,7 @@ while game:
         if keys[pygame.K_RIGHT] and player_x < largura - player_largura:
             player_x += player_velocidade
 
-        # Atualiza pontuação
+        # Pontuação
         seconds_passed = (pygame.time.get_ticks() - start_ticks) // 25
         score = seconds_passed
 
@@ -109,7 +111,7 @@ while game:
         qtd_inimigos_desejada = min(1 + (score // 500), max_inimigos)
         velocidade_maxima = 5 + (score // 500)
 
-        # Spawn de inimigos se houver espaço
+        # Spawn de inimigos
         if len(enemy_list) < qtd_inimigos_desejada and tempo_atual - tempo_ultimo_spawn > intervalo_spawn:
             tentativas = 0
             while tentativas < 20:
@@ -125,11 +127,11 @@ while game:
                     break
                 tentativas += 1
 
-        # Atualiza posição dos inimigos
+        # Atualiza inimigos
         for enemy in enemy_list:
             enemy['rect'].y += enemy['velocidade']
 
-        # Colisão com invulnerabilidade
+        # Colisão
         player_rect = pygame.Rect(player_x, player_y, player_largura, player_altura)
         for enemy in enemy_list:
             if player_rect.colliderect(enemy['rect']):
@@ -178,8 +180,12 @@ while game:
                 pygame.draw.line(window, branco, (x, y), (x, y + traco_altura), 5)
                 y += traco_altura + traco_espaco
 
-        # Jogador
-        window.blit(image_player, (player_x, player_y))
+        # Jogador com piscar durante invulnerabilidade
+        if tempo_atual - ultima_colisao < invulnerabilidade_ms:
+            if (tempo_atual // 100) % 2 == 0:  # piscar a cada 100ms
+                window.blit(image_player, (player_x, player_y))
+        else:
+            window.blit(image_player, (player_x, player_y))
 
         # Inimigos
         for enemy in enemy_list:
@@ -189,9 +195,9 @@ while game:
         score_text = small_font.render(f"Pontos: {score}", True, branco)
         window.blit(score_text, (20, 20))
 
-        # Vidas
-        vidas_text = small_font.render(f"Vidas: {vidas}", True, branco)
-        window.blit(vidas_text, (20, 60))
+        # Corações (vidas)
+        for i in range(vidas):
+            window.blit(coracao_img, (20 + i * 35, 60))
 
         # Estrelas
         estrelas = min(score // 1000, 5)
@@ -211,4 +217,3 @@ pygame.quit()
 
 #poderes: escudo, vida extra, carros mais devagares, menos carros na tela, 
 #quando colidir fazer animação de explosão
-#cpa fazer uma paisagem na tela de jogo
