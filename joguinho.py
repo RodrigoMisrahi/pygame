@@ -1,8 +1,15 @@
 import pygame
 import random
-
 # Inicializa o Pygame
 pygame.init()
+
+pygame.mixer.init()
+
+# Música de fundo
+pygame.mixer.music.load('assets/sons/fundo.mp3')
+pygame.mixer.music.set_volume(0.5)
+pygame.mixer.music.play(-1)  # Toca em loop
+
 
 # Constantes
 tela_largura = 500
