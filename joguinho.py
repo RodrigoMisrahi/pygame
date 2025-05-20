@@ -280,7 +280,7 @@ while game:
             window.blit(estrela_img, (tela_largura - (i + 1) * 35, 40))
 
     elif estado == RANKINGS:
-        window.fill(azulescuro)
+        window.fill(preto)
         window.blit(font.render("Rankings (em breve)", True, branco), (100, tela_altura // 2))
         pygame.draw.rect(window, cinza, back_button)
         window.blit(small_font.render("Voltar", True, preto), (back_button.x + 10, back_button.y + 5))
