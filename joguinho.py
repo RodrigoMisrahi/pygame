@@ -107,7 +107,7 @@ escudo_tempo = 5000
 escudo_inicio = 0
 carros_devagar_tempo = 10000
 carros_devagar_inicio = 0
-menos_carros_tempo = 10000
+menos_carros_tempo = 15000
 menos_carros_inicio = 0
 
 # Clock
