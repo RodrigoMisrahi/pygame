@@ -1,27 +1,5 @@
 import pygame
 import random
-import ranking
-import json
-
-def carregar_rankings():
-    try:
-        with open('rankings.json', 'r') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return []
-
-def salvar_rankings(rankings):
-    with open('rankings.json', 'w') as f:
-        json.dump(rankings, f)
-
-def adicionar_pontuacao(nome, pontuacao):
-    rankings = carregar_rankings()
-    rankings.append({'nome': nome, 'pontuacao': pontuacao})
-    # Ordena do maior para o menor e mantém apenas os top 10
-    rankings.sort(key=lambda x: x['pontuacao'], reverse=True)
-    rankings = rankings[:10]
-    salvar_rankings(rankings)
-
 # Inicializa o Pygame
 pygame.init()
 
@@ -31,6 +9,10 @@ pygame.mixer.init()
 pygame.mixer.music.load('assets/sons/fundo.mp3')
 pygame.mixer.music.set_volume(0.5)
 pygame.mixer.music.play(-1)  # Toca em loop
+
+# Música de colisão
+som_colisao = pygame.mixer.Sound('assets/sons/colisao.mp3')
+som_colisao.set_volume(0.7)
 
 
 # Constantes
@@ -129,7 +111,7 @@ escudo_tempo = 5000
 escudo_inicio = 0
 carros_devagar_tempo = 10000
 carros_devagar_inicio = 0
-menos_carros_tempo = 15000
+menos_carros_tempo = 10000
 menos_carros_inicio = 0
 
 # Clock
@@ -162,8 +144,7 @@ while game:
 
         elif estado == FIM_JOGO and event.type == pygame.KEYDOWN and input_ativo:
             if event.key == pygame.K_RETURN:
-                if digitar_nome.strip() != '':  # Só salva se o nome não for vazio
-                    adicionar_pontuacao(digitar_nome.strip(), score)
+                print(f"Nome: {digitar_nome}, Pontuação: {score}")  # Aqui você pode salvar os dados em arquivo
                 estado = INICIO
                 digitar_nome = ''
             elif event.key == pygame.K_BACKSPACE:
@@ -303,16 +284,8 @@ while game:
             window.blit(estrela_img, (tela_largura - (i + 1) * 35, 40))
 
     elif estado == RANKINGS:
-        window.fill(preto)
-        window.blit(font.render("Top 10 Rankings", True, branco), (150, 50))
-        
-        rankings = carregar_rankings()
-        y_pos = 120
-        for idx, entry in enumerate(rankings):
-            texto = f"{idx + 1}. {entry['nome']}: {entry['pontuacao']}"
-            window.blit(small_font.render(texto, True, branco), (100, y_pos))
-            y_pos += 40
-        
+        window.fill(azulescuro)
+        window.blit(font.render("Rankings (em breve)", True, branco), (100, tela_altura // 2))
         pygame.draw.rect(window, cinza, back_button)
         window.blit(small_font.render("Voltar", True, preto), (back_button.x + 10, back_button.y + 5))
 
@@ -331,16 +304,10 @@ while game:
         pygame.draw.rect(window, cinza, back_button)
         window.blit(small_font.render("Voltar", True, preto), (back_button.x + 10, back_button.y + 5))
 
-        rankings = carregar_rankings()[:5]  # Mostra apenas top 5
-        y_pos = 400
-        for idx, entry in enumerate(rankings):
-            texto = f"{idx + 1}. {entry['nome']}: {entry['pontuacao']}"
-            window.blit(small_font.render(texto, True, branco), (100, y_pos))
-            y_pos += 35
-
     pygame.display.update()
 
 pygame.quit()
 
 #quando colidir fazer animação de explosão
-#som de fundo e de colisão
+#som de colisão
+#arrumar a hitbox
