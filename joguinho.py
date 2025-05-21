@@ -47,7 +47,7 @@ vermelho = (200, 0, 0)
 
 # Tela
 window = pygame.display.set_mode((tela_largura, tela_altura))
-pygame.display.set_caption('Joguinho')
+pygame.display.set_caption('Smash Insper')
 
 # Fontes
 font = pygame.font.SysFont(None, 48)
@@ -165,7 +165,8 @@ while game:
 
         elif estado == FIM_JOGO and event.type == pygame.KEYDOWN and input_ativo:
             if event.key == pygame.K_RETURN:
-                print(f"Nome: {digitar_nome}, Pontuação: {score}")  # Aqui você pode salvar os dados em arquivo
+                if digitar_nome.strip() != '':  # Só salva se o nome não for vazio
+                    adicionar_pontuacao(digitar_nome.strip(), score)
                 estado = INICIO
                 digitar_nome = ''
             elif event.key == pygame.K_BACKSPACE:
@@ -272,8 +273,8 @@ while game:
     # Renderiza telas
     if estado == INICIO:
         window.blit(telafundo, (0, 0))
-        window.blit(font.render('INSPER', True, branco), (180, 120))
-        window.blit(font.render('SMASH', True, branco), (180, 160))
+        window.blit(font.render('INSPER', True, branco), (180, 160))
+        window.blit(font.render('SMASH', True, branco), (180, 120))
         pygame.draw.rect(window, cinza, play_button)
         pygame.draw.rect(window, cinza, rankings_button)
         window.blit(font.render("Jogar", True, preto), (play_button.x + 50, play_button.y + 10))
@@ -305,8 +306,15 @@ while game:
             window.blit(estrela_img, (tela_largura - (i + 1) * 35, 40))
 
     elif estado == RANKINGS:
-        window.fill(azulescuro)
-        window.blit(font.render("Rankings (em breve)", True, branco), (100, tela_altura // 2))
+        window.fill(preto)
+        window.blit(font.render("Top 10 Rankings", True, branco), (150, 50))
+        
+        rankings = carregar_rankings()
+        y_pos = 120
+        for idx, entry in enumerate(rankings):
+            texto = f"{idx + 1}. {entry['nome']}: {entry['pontuacao']}"
+            window.blit(small_font.render(texto, True, branco), (100, y_pos))
+            y_pos += 40
         pygame.draw.rect(window, cinza, back_button)
         window.blit(small_font.render("Voltar", True, preto), (back_button.x + 10, back_button.y + 5))
 
@@ -324,6 +332,12 @@ while game:
         window.blit(nome_surface, (tela_largura // 2 - 95, 305))
         pygame.draw.rect(window, cinza, back_button)
         window.blit(small_font.render("Voltar", True, preto), (back_button.x + 10, back_button.y + 5))
+        rankings = carregar_rankings()[:5]  # Mostra apenas top 5
+        y_pos = 400
+        for idx, entry in enumerate(rankings):
+            texto = f"{idx + 1}. {entry['nome']}: {entry['pontuacao']}"
+            window.blit(small_font.render(texto, True, branco), (100, y_pos))
+            y_pos += 35
 
     pygame.display.update()
 
