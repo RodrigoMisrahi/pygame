@@ -1,109 +1,63 @@
 import pygame
 import random
 import ranking
-import json
 
-def carregar_rankings():
-    try:
-        with open('rankings.json', 'r') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return []
-
-def salvar_rankings(rankings):
-    with open('rankings.json', 'w') as f:
-        json.dump(rankings, f)
-
-def adicionar_pontuacao(nome, pontuacao):
-    rankings = carregar_rankings()
-    rankings.append({'nome': nome, 'pontuacao': pontuacao})
-    # Ordena do maior para o menor e mantém apenas os top 10
-    rankings.sort(key=lambda x: x['pontuacao'], reverse=True)
-    rankings = rankings[:10]
-    salvar_rankings(rankings)
-# Inicializa o Pygame
-pygame.init()
-
-pygame.mixer.init()
-
-# Música de fundo
-pygame.mixer.music.load('assets/sons/fundo.mp3')
-pygame.mixer.music.set_volume(0.5)
-pygame.mixer.music.play(-1)  # Toca em loop
-
-# Música de colisão
-som_colisao = pygame.mixer.Sound('assets/sons/colisao.mp3')
-som_colisao.set_volume(0.7)
+# Inicialização e carregamento
+def init_pygame():
+    """Inicializa o Pygame e seus módulos de áudio."""
+    pygame.init()
+    pygame.mixer.init()
 
 
-# Constantes
-tela_largura = 500
-tela_altura = 720
-branco = (255, 255, 255)
-preto = (0, 0, 0)
-azulescuro = (10, 10, 80)
-cinza = (200, 200, 200)
-vermelho = (200, 0, 0)
+def load_assets():
+    """Carrega imagens, sons e configurações iniciais."""
+    # Música de fundo
+    pygame.mixer.music.load('assets/sons/fundo.mp3')
+    pygame.mixer.music.set_volume(0.5)
+    pygame.mixer.music.play(-1)
 
-# Tela
-window = pygame.display.set_mode((tela_largura, tela_altura))
-pygame.display.set_caption('Smash Insper')
+    # Música de colisão
+    som = pygame.mixer.Sound('assets/sons/colisao.mp3')
+    som.set_volume(0.7)
 
-# Fontes
-font = pygame.font.SysFont(None, 48)
-small_font = pygame.font.SysFont(None, 36)
-input_font = pygame.font.SysFont(None, 40)
+    # Imagens do jogador e inimigos
+    player_img = pygame.image.load('assets/imagens/user.png').convert()
+    player_img = pygame.transform.scale(player_img, (player_largura, player_altura))
+    enemy_img = pygame.image.load('assets/imagens/policia.png').convert()
+    enemy_img = pygame.transform.scale(enemy_img, (enemy_largura, enemy_altura))
 
-# Botões
-play_button = pygame.Rect(150, 250, 200, 60)
-rankings_button = pygame.Rect(150, 350, 200, 60)
-back_button = pygame.Rect(20, 20, 100, 40)
+    # Ícones de poderes e vidas
+    estrela = pygame.image.load('assets/imagens/estrela.png').convert_alpha()
+    estrela = pygame.transform.scale(estrela, (30, 30))
 
-# Estados
-INICIO = 'inicio'
-JOGO = 'jogo'
-RANKINGS = 'rankings'
-FIM_JOGO = 'fim_jogo'
+    poder_imgs = {
+        'escudo': pygame.transform.scale(pygame.image.load('assets/imagens/escudo.png').convert_alpha(), (50, 80)),
+        'vida_extra': pygame.transform.scale(pygame.image.load('assets/imagens/vida.png').convert_alpha(), (50, 80)),
+        'carros_devagar': pygame.transform.scale(pygame.image.load('assets/imagens/lento.png').convert_alpha(), (50, 80)),
+        'menos_carros': pygame.transform.scale(pygame.image.load('assets/imagens/menos.png').convert_alpha(), (50, 80)),
+    }
+
+    coracao = pygame.image.load('assets/imagens/coracao.png').convert_alpha()
+    coracao = pygame.transform.scale(coracao, (30, 30))
+
+    # Fundo da tela inicial
+    fundo = pygame.image.load('assets/imagens/WhatsApp Image 2025-05-15 at 16.57.15.jpeg').convert()
+    fundo = pygame.transform.scale(fundo, (tela_largura, tela_altura))
+
+    return som, player_img, enemy_img, estrela, poder_imgs, coracao, fundo
+
+
+# FSM e reset do jogo
+INICIO, JOGO, RANKINGS, FIM_JOGO = 'inicio', 'jogo', 'rankings', 'fim_jogo'
 estado = INICIO
 
-# Variáveis jogador
-player_largura = 70
-player_altura = 120
-player_x = tela_largura // 2 - player_largura // 2
-player_y = tela_altura - player_altura - 30
-player_velocidade = 7
-image_player = pygame.image.load('assets/imagens/user.png').convert()
-image_player = pygame.transform.scale(image_player, (70, 120))
 
-# Carros inimigos
-enemy_largura = 70
-enemy_altura = 120
-image_enemy = pygame.image.load('assets/imagens/policia.png').convert()
-image_enemy = pygame.transform.scale(image_enemy, (70, 120))
-
-# Imagens adicionais
-estrela_img = pygame.image.load('assets/imagens/estrela.png').convert_alpha()
-estrela_img = pygame.transform.scale(estrela_img, (30, 30))
-
-poder_images = {
-    'escudo': pygame.transform.scale(pygame.image.load('assets/imagens/escudo.png').convert_alpha(), (50, 80)),
-    'vida_extra': pygame.transform.scale(pygame.image.load('assets/imagens/vida.png').convert_alpha(), (50, 80)),
-    'carros_devagar': pygame.transform.scale(pygame.image.load('assets/imagens/lento.png').convert_alpha(), (50, 80)),
-    'menos_carros': pygame.transform.scale(pygame.image.load('assets/imagens/menos.png').convert_alpha(), (50, 80)),
-}
-
-coracao_img = pygame.image.load('assets/imagens/coracao.png').convert_alpha()
-coracao_img = pygame.transform.scale(coracao_img, (30, 30))
-
-# Fundo
-telafundo = pygame.image.load('assets/imagens/WhatsApp Image 2025-05-15 at 16.57.15.jpeg').convert()
-telafundo = pygame.transform.scale(telafundo, (tela_largura, tela_altura))
-
-# Inicializa variáveis
 def reset_jogo():
+    """Reseta variáveis do jogo para o estado inicial."""
     global player_x, enemy_list, poder_list, start_ticks, score, vidas, invulneravel
     global escudo_ativo, carros_devagar_ativo, menos_carros_ativo
     global tempo_ultimo_spawn, tempo_ultimo_poder
+
     player_x = tela_largura // 2 - player_largura // 2
     enemy_list = []
     poder_list = []
@@ -117,231 +71,296 @@ def reset_jogo():
     tempo_ultimo_spawn = 0
     tempo_ultimo_poder = 0
 
-reset_jogo()
 
-# Controle de inimigos e poderes
-max_inimigos = 7
-intervalo_spawn = 600
+# Spawn de inimigos e poderes
+def spawn_enemy(tempo_atual):
+    """Adiciona um novo inimigo se condições de tempo e quantidade forem atendidas."""
+    global tempo_ultimo_spawn
+    qtd = min(1 + (score // 500), max_inimigos)
+    if menos_carros_ativo:
+        qtd = max(qtd - 2, 1)
 
-# Invulnerabilidade
-tempo_invulneravel = 2000
-tempo_invulneravel_inicio = 0
+    vel_min = 3
+    vel_max = 5 + (score // 500)
+    if carros_devagar_ativo:
+        vel_min = 1
+        vel_max = max(vel_max // 2, 2)
 
-# Temporizadores de poderes
-escudo_tempo = 5000
-escudo_inicio = 0
-carros_devagar_tempo = 10000
-carros_devagar_inicio = 0
-menos_carros_tempo = 10000
-menos_carros_inicio = 0
-
-# Clock
-clock = pygame.time.Clock()
-
-# Tela de fim
-digitar_nome = ''
-input_ativo = True
-
-# Loop principal
-game = True
-while game:
-    clock.tick(60)
-    tempo_atual = pygame.time.get_ticks()
-
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            game = False
-        elif event.type == pygame.MOUSEBUTTONUP:
-            if estado == INICIO:
-                if play_button.collidepoint(event.pos):
-                    reset_jogo()
-                    estado = JOGO
-                elif rankings_button.collidepoint(event.pos):
-                    estado = RANKINGS
-            elif estado == RANKINGS and back_button.collidepoint(event.pos):
-                estado = INICIO
-            elif estado == FIM_JOGO and back_button.collidepoint(event.pos):
-                estado = INICIO
-
-        elif estado == FIM_JOGO and event.type == pygame.KEYDOWN and input_ativo:
-            if event.key == pygame.K_RETURN:
-                if digitar_nome.strip() != '':  # Só salva se o nome não for vazio
-                    adicionar_pontuacao(digitar_nome.strip(), score)
-                estado = INICIO
-                digitar_nome = ''
-            elif event.key == pygame.K_BACKSPACE:
-                digitar_nome = digitar_nome[:-1]
-            elif len(digitar_nome) < 10:
-                digitar_nome += event.unicode
-
-    keys = pygame.key.get_pressed()
-    if estado == JOGO:
-        if keys[pygame.K_LEFT] and player_x > 0:
-            player_x -= player_velocidade
-        if keys[pygame.K_RIGHT] and player_x < tela_largura - player_largura:
-            player_x += player_velocidade
-
-        seconds_passed = (pygame.time.get_ticks() - start_ticks) // 25
-        score = seconds_passed
-
-        qtd_inimigos = min(1 + (score // 500), max_inimigos)
-        vel_max = 5 + (score // 500)
-
-        vel_min = 3
-        if carros_devagar_ativo:
-            vel_min = 1
-            vel_max = max(vel_max // 2, 2)
-
-        if menos_carros_ativo:
-            qtd_inimigos = max(qtd_inimigos - 2, 1)
-
-        if len(enemy_list) < qtd_inimigos and tempo_atual - tempo_ultimo_spawn > intervalo_spawn:
-            tentativas = 0
-            while tentativas < 20:
-                x_pos = random.randint(0, tela_largura - enemy_largura)
-                novo_rect = pygame.Rect(x_pos, -enemy_altura, enemy_largura, enemy_altura)
-                if not any(novo_rect.colliderect(e['rect']) for e in enemy_list):
-                    vel = random.randint(vel_min, vel_max)
-                    enemy_list.append({'rect': novo_rect, 'velocidade': vel})
-                    tempo_ultimo_spawn = tempo_atual
-                    break
-                tentativas += 1
-
-        if score > 0 and score % 1250 == 0 and tempo_atual - tempo_ultimo_poder > 2000:
-            tipo = random.choice(list(poder_images.keys()))
-            tentativas = 0
-            while tentativas < 20:
-                x_pos = random.randint(0, tela_largura - enemy_largura)
-                novo_rect = pygame.Rect(x_pos, -enemy_altura, enemy_largura, enemy_altura)
-                if not any(novo_rect.colliderect(e['rect']) for e in enemy_list):
-                    poder_list.append({'rect': novo_rect, 'tipo': tipo, 'velocidade': 3})
-                    tempo_ultimo_poder = tempo_atual
-                    break
-                tentativas += 1
-
-        for enemy in enemy_list:
-            enemy['rect'].y += enemy['velocidade']
-        for poder in poder_list:
-            poder['rect'].y += poder['velocidade']
-
-        player_rect = pygame.Rect(player_x, player_y, player_largura, player_altura)
-        if not invulneravel:
-            for enemy in enemy_list:
-                if player_rect.colliderect(enemy['rect']):
-                    if escudo_ativo:
-                        escudo_ativo = False
-                    else:
-                        vidas -= 1
-                        invulneravel = True
-                        tempo_invulneravel_inicio = tempo_atual
-                    enemy_list.remove(enemy)
-                    break
-
-        for poder in poder_list:
-            if player_rect.colliderect(poder['rect']):
-                tipo = poder['tipo']
-                if tipo == 'escudo':
-                    escudo_ativo = True
-                    escudo_inicio = tempo_atual
-                elif tipo == 'vida_extra' and vidas < 5:
-                    vidas += 1
-                elif tipo == 'carros_devagar':
-                    carros_devagar_ativo = True
-                    carros_devagar_inicio = tempo_atual
-                elif tipo == 'menos_carros':
-                    menos_carros_ativo = True
-                    menos_carros_inicio = tempo_atual
-                poder_list.remove(poder)
+    if len(enemy_list) < qtd and tempo_atual - tempo_ultimo_spawn > intervalo_spawn:
+        for _ in range(20):
+            x_pos = random.randint(0, tela_largura - enemy_largura)
+            rect = pygame.Rect(x_pos, -enemy_altura, enemy_largura, enemy_altura)
+            if not any(rect.colliderect(e['rect']) for e in enemy_list):
+                enemy_list.append({'rect': rect, 'velocidade': random.randint(vel_min, vel_max)})
+                tempo_ultimo_spawn = tempo_atual
                 break
 
-        enemy_list = [e for e in enemy_list if e['rect'].y < tela_altura]
-        poder_list = [p for p in poder_list if p['rect'].y < tela_altura]
 
-        if invulneravel and tempo_atual - tempo_invulneravel_inicio > tempo_invulneravel:
-            invulneravel = False
+def spawn_poder(tempo_atual):
+    """Adiciona um novo poder aleatório a cada 1250 pontos."""
+    global tempo_ultimo_poder
+    if score > 0 and score % 1250 == 0 and tempo_atual - tempo_ultimo_poder > 2000:
+        tipo = random.choice(list(poder_images.keys()))
+        for _ in range(20):
+            x_pos = random.randint(0, tela_largura - enemy_largura)
+            rect = pygame.Rect(x_pos, -enemy_altura, enemy_largura, enemy_altura)
+            if not any(rect.colliderect(e['rect']) for e in enemy_list):
+                poder_list.append({'rect': rect, 'tipo': tipo, 'velocidade': 3})
+                tempo_ultimo_poder = tempo_atual
+                break
 
-        if escudo_ativo and tempo_atual - escudo_inicio > escudo_tempo:
-            escudo_ativo = False
-        if carros_devagar_ativo and tempo_atual - carros_devagar_inicio > carros_devagar_tempo:
-            carros_devagar_ativo = False
-        if menos_carros_ativo and tempo_atual - menos_carros_inicio > menos_carros_tempo:
-            menos_carros_ativo = False
 
-        if vidas <= 0:
-            estado = FIM_JOGO
+# Colisões e timers
+def handle_collisions(tempo_atual):
+    """Detecta colisões com inimigos e poderes e aplica efeitos."""
+    global vidas, invulneravel, tempo_invulneravel_inicio
+    global escudo_ativo, escudo_inicio
+    global carros_devagar_ativo, carros_devagar_inicio
+    global menos_carros_ativo, menos_carros_inicio
 
-    # Renderiza telas
+    player_rect = pygame.Rect(player_x, player_y, player_largura, player_altura)
+
+    # Colisão com inimigos
+    if not invulneravel:
+        for e in enemy_list:
+            if player_rect.colliderect(e['rect']):
+                if escudo_ativo:
+                    escudo_ativo = False
+                else:
+                    vidas -= 1
+                    invulneravel = True
+                    tempo_invulneravel_inicio = tempo_atual
+                enemy_list.remove(e)
+                break
+
+    # Colisão com poderes
+    for p in poder_list:
+        if player_rect.colliderect(p['rect']):
+            if p['tipo'] == 'escudo':
+                scudo_ativo = True; escudo_inicio = tempo_atual
+            elif p['tipo'] == 'vida_extra' and vidas < 5:
+                vidas += 1
+            elif p['tipo'] == 'carros_devagar':
+                carros_devagar_ativo = True; carros_devagar_inicio = tempo_atual
+            elif p['tipo'] == 'menos_carros':
+                menos_carros_ativo = True; menos_carros_inicio = tempo_atual
+            poder_list.remove(p)
+            break
+
+
+# Atualização de estado
+def update_game(tempo_atual):
+    """Atualiza posições, timers e pontuação."""
+    global score, invulneravel
+
+    # Atualiza score pelo tempo decorrido
+    score = (pygame.time.get_ticks() - start_ticks) // 25
+
+    # Move inimigos e poderes
+    for e in enemy_list:
+        e['rect'].y += e['velocidade']
+    for p in poder_list:
+        p['rect'].y += p['velocidade']
+
+    # Filtra objetos fora da tela
+    enemy_list[:] = [e for e in enemy_list if e['rect'].y < tela_altura]
+    poder_list[:] = [p for p in poder_list if p['rect'].y < tela_altura]
+
+    # Reseta invulnerabilidade e efeitos
+    if invulneravel and tempo_atual - tempo_invulneravel_inicio > tempo_invulneravel:
+        invulneravel = False
+    if escudo_ativo and tempo_atual - escudo_inicio > escudo_tempo:
+        escudo_ativo = False
+    if carros_devagar_ativo and tempo_atual - carros_devagar_inicio > carros_devagar_tempo:
+        carros_devagar_ativo = False
+    if menos_carros_ativo and tempo_atual - menos_carros_inicio > menos_carros_tempo:
+        menos_carros_ativo = False
+
+
+# Renderização das telas
+def render_inicio():
+    """Desenha a tela inicial com botões de Jogar e Rankings."""
+    window.blit(telafundo, (0, 0))
+    window.blit(font.render('INSPER', True, branco), (180, 160))
+    window.blit(font.render('SMASH', True, branco), (180, 120))
+    pygame.draw.rect(window, cinza, play_button)
+    pygame.draw.rect(window, cinza, rankings_button)
+    window.blit(font.render('Jogar', True, preto), (play_button.x+50, play_button.y+10))
+    window.blit(font.render('Rankings', True, preto), (rankings_button.x+30, rankings_button.y+10))
+
+
+def render_jogo():
+    """Desenha o jogo em andamento: pista, jogador, inimigos, poderes e HUD."""
+    window.fill(preto)
+    # Traços da pista
+    for x in [tela_largura//3, 2*tela_largura//3]:
+        for y in range(0, tela_altura, 40):
+            pygame.draw.line(window, branco, (x, y), (x, y+20), 5)
+
+    # Jogador
+    if not (invulneravel and ((pygame.time.get_ticks()//200) % 2) == 0):
+        window.blit(image_player, (player_x, player_y))
+    if escudo_ativo:
+        pygame.draw.rect(window, (0,150,255), (player_x-5, player_y-5, player_largura+10, player_altura+10), 3)
+
+    # Inimigos e poderes
+    for e in enemy_list:
+        window.blit(image_enemy, (e['rect'].x, e['rect'].y))
+    for p in poder_list:
+        window.blit(poder_images[p['tipo']], (p['rect'].x, p['rect'].y))
+
+    # Vidas e pontuação
+    for i in range(vidas): window.blit(coracao_img, (10 + i*35, 10))
+    window.blit(small_font.render(f'Pontuação: {score}', True, branco), (tela_largura-200,10))
+
+    # Estrelas bônus
+    for i in range(min(score//1000,5)):
+        window.blit(estrela_img, (tela_largura-(i+1)*35,40))
+
+
+def render_rankings():
+    """Desenha a tela de Rankings com top 10."""
+    window.fill(preto)
+    window.blit(font.render('Top 10 Rankings', True, branco), (150, 50))
+    lst = ranking.carregar_rankings()
+    y = 120
+    for idx, e in enumerate(lst):
+        text = f"{idx+1}. {e['nome']}: {e['pontuacao']}"
+        window.blit(small_font.render(text, True, branco), (100, y)); y += 40
+    pygame.draw.rect(window, cinza, back_button)
+    window.blit(small_font.render('Voltar', True, preto), (back_button.x+10, back_button.y+5))
+
+
+def render_fim_jogo():
+    """Desenha a tela de fim de jogo com input de nome e top5."""
+    window.fill(preto)
+    window.blit(font.render('Fim de jogo!', True, vermelho), (tela_largura//2-100,150))
+    window.blit(small_font.render(f'Pontuação final: {score}', True, branco), (tela_largura//2-120,200))
+    window.blit(small_font.render('Digite seu nome:', True, branco), (tela_largura//2-120,260))
+    pygame.draw.rect(window, branco, (tela_largura//2-100,300,200,40), 2)
+    window.blit(input_font.render(digitar_nome, True, branco), (tela_largura//2-95,305))
+    pygame.draw.rect(window, cinza, back_button)
+    window.blit(small_font.render('Voltar', True, preto), (back_button.x+10, back_button.y+5))
+    # Top 5
+    lst = ranking.carregar_rankings()[:5]
+    y = 400
+    for idx, e in enumerate(lst):
+        txt = f"{idx+1}. {e['nome']}: {e['pontuacao']}"
+        window.blit(small_font.render(txt, True, branco), (100, y)); y += 35
+
+
+# Função principal
+def main():
+    init_pygame()
+    global som_colisao, image_player, image_enemy, estrela_img, poder_images, coracao_img, telafundo
+    som_colisao, image_player, image_enemy, estrela_img, poder_images, coracao_img, telafundo = load_assets()
+    reset_jogo()
+
+    # Loop principal
+    clock = pygame.time.Clock()
+    game = True
+    global estado, digitar_nome, input_ativo
+    digitar_nome = ''
+    input_ativo = True
+
+    while game:
+        clock.tick(60)
+        tempo_atual = pygame.time.get_ticks()
+
+        # Tratamento de eventos
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                game = False
+            elif event.type == pygame.MOUSEBUTTONUP:
+                handle_mouse(event.pos)
+            elif estado == FIM_JOGO and event.type == pygame.KEYDOWN and input_ativo:
+                handle_name_input(event)
+
+        # Input de teclado no jogo
+        if estado == JOGO:
+            handle_keyboard()
+            spawn_enemy(tempo_atual)
+            spawn_poder(tempo_atual)
+            handle_collisions(tempo_atual)
+            update_game(tempo_atual)
+            if vidas <= 0:
+                estado = FIM_JOGO
+
+        # Renderização de acordo com o estado
+        if estado == INICIO:
+            render_inicio()
+        elif estado == JOGO:
+            render_jogo()
+        elif estado == RANKINGS:
+            render_rankings()
+        elif estado == FIM_JOGO:
+            render_fim_jogo()
+
+        pygame.display.update()
+
+    pygame.quit()
+
+# Funções auxiliares para input
+def handle_mouse(pos):
+    """Gerencia cliques de mouse conforme o estado atual."""
+    global estado
     if estado == INICIO:
-        window.blit(telafundo, (0, 0))
-        window.blit(font.render('INSPER', True, branco), (180, 160))
-        window.blit(font.render('SMASH', True, branco), (180, 120))
-        pygame.draw.rect(window, cinza, play_button)
-        pygame.draw.rect(window, cinza, rankings_button)
-        window.blit(font.render("Jogar", True, preto), (play_button.x + 50, play_button.y + 10))
-        window.blit(font.render("Rankings", True, preto), (rankings_button.x + 30, rankings_button.y + 10))
+        if play_button.collidepoint(pos):
+            reset_jogo(); estado = JOGO
+        elif rankings_button.collidepoint(pos):
+            estado = RANKINGS
+    elif estado in (RANKINGS, FIM_JOGO):
+        if back_button.collidepoint(pos):
+            estado = INICIO
 
-    elif estado == JOGO:
-        window.fill(preto)
-        for x in [tela_largura // 3, 2 * tela_largura // 3]:
-            for y in range(0, tela_altura, 40):
-                pygame.draw.line(window, branco, (x, y), (x, y + 20), 5)
 
-        if not (invulneravel and (tempo_atual // 200) % 2 == 0):
-            window.blit(image_player, (player_x, player_y))
-        if escudo_ativo:
-            pygame.draw.rect(window, (0, 150, 255), (player_x - 5, player_y - 5, player_largura + 10, player_altura + 10), 3)
+def handle_keyboard():
+    # Gerencia setas esquerda/direita durante o jogo
+    keys = pygame.key.get_pressed()
+    global player_x
+    if keys[pygame.K_LEFT] and player_x > 0:
+        player_x -= player_velocidade
+    if keys[pygame.K_RIGHT] and player_x < tela_largura-player_largura:
+        player_x += player_velocidade
 
-        for enemy in enemy_list:
-            window.blit(image_enemy, (enemy['rect'].x, enemy['rect'].y))
-        for poder in poder_list:
-            window.blit(poder_images[poder['tipo']], (poder['rect'].x, poder['rect'].y))
 
-        for i in range(vidas):
-            window.blit(coracao_img, (10 + i * 35, 10))
+def handle_name_input(event):
+    # Lê caracteres para o nome no fim de jogo e salva ranking
+    global digitar_nome, estado
+    if event.key == pygame.K_RETURN and digitar_nome.strip():
+        ranking.adicionar_pontuacao(digitar_nome.strip(), score)
+        estado = INICIO; digitar_nome = ''
+    elif event.key == pygame.K_BACKSPACE:
+        digitar_nome = digitar_nome[:-1]
+    elif len(digitar_nome) < 10:
+        digitar_nome += event.unicode
 
-        window.blit(small_font.render(f'Pontuação: {score}', True, branco), (tela_largura - 200, 10))
 
-        estrelas = min(score // 1000, 5)
-        for i in range(estrelas):
-            window.blit(estrela_img, (tela_largura - (i + 1) * 35, 40))
+if __name__ == '__main__':
+    # Constantes globais usadas em todo código
+    tela_largura, tela_altura = 500, 720
+    branco, preto, azulescuro = (255,255,255), (0,0,0), (10,10,80)
+    cinza, vermelho = (200,200,200), (200,0,0)
+    player_largura, player_altura = 70, 120
+    player_y = tela_altura - player_altura - 30
+    player_velocidade = 7
+    enemy_largura, enemy_altura = 70, 120
+    intervalo_spawn = 600; max_inimigos = 7
+    tempo_invulneravel = 2000
+    escudo_tempo, carros_devagar_tempo, menos_carros_tempo = 5000, 10000, 10000
 
-    elif estado == RANKINGS:
-        window.fill(preto)
-        window.blit(font.render("Top 10 Rankings", True, branco), (150, 50))
-        
-        rankings = carregar_rankings()
-        y_pos = 120
-        for idx, entry in enumerate(rankings):
-            texto = f"{idx + 1}. {entry['nome']}: {entry['pontuacao']}"
-            window.blit(small_font.render(texto, True, branco), (100, y_pos))
-            y_pos += 40
-        pygame.draw.rect(window, cinza, back_button)
-        window.blit(small_font.render("Voltar", True, preto), (back_button.x + 10, back_button.y + 5))
+    # Botões e fontes
+    play_button = pygame.Rect(150,250,200,60)
+    rankings_button = pygame.Rect(150,350,200,60)
+    back_button = pygame.Rect(20,20,100,40)
+    font = pygame.font.SysFont(None,48)
+    small_font = pygame.font.SysFont(None,36)
+    input_font = pygame.font.SysFont(None,40)
 
-    elif estado == FIM_JOGO:
-        window.fill(preto)
-        fim_text = font.render("Fim de jogo!", True, vermelho)
-        score_text = small_font.render(f'Pontuação final: {score}', True, branco)
-        input_text = small_font.render("Digite seu nome:", True, branco)
-        nome_surface = input_font.render(digitar_nome, True, branco)
+    window = pygame.display.set_mode((tela_largura,tela_altura))
+    pygame.display.set_caption('Smash Insper')
 
-        window.blit(fim_text, fim_text.get_rect(center=(tela_largura // 2, 150)))
-        window.blit(score_text, score_text.get_rect(center=(tela_largura // 2, 200)))
-        window.blit(input_text, input_text.get_rect(center=(tela_largura // 2, 260)))
-        pygame.draw.rect(window, branco, (tela_largura // 2 - 100, 300, 200, 40), 2)
-        window.blit(nome_surface, (tela_largura // 2 - 95, 305))
-        pygame.draw.rect(window, cinza, back_button)
-        window.blit(small_font.render("Voltar", True, preto), (back_button.x + 10, back_button.y + 5))
-        rankings = carregar_rankings()[:5]  # Mostra apenas top 5
-        y_pos = 400
-        for idx, entry in enumerate(rankings):
-            texto = f"{idx + 1}. {entry['nome']}: {entry['pontuacao']}"
-            window.blit(small_font.render(texto, True, branco), (100, y_pos))
-            y_pos += 35
-
-    pygame.display.update()
-
-pygame.quit()
+    main()
 
 #quando colidir fazer animação de explosão
 #som de colisão
