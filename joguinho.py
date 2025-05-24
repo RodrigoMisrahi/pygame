@@ -284,7 +284,7 @@ def render_jogo(window, assets, fonts, state):
 
 def render_rankings(window, fonts):
     """Desenha a tela de rankings com top 10"""
-    window.fill((0, 0, 0))
+    window.blit(assets['fundo_inicio'], (0, 0))
     window.blit(fonts['large'].render('Top 10 Rankings', True, (255, 255, 255)), (150, 50))
     dados = ranking.carregar_rankings()
     y = 120
@@ -299,11 +299,17 @@ def render_rankings(window, fonts):
 def render_fim_jogo(window, assets, fonts, state):
     """Desenha a tela de fim de jogo e input de nome"""
     window.fill((0, 0, 0))
-    window.blit(fonts['large'].render('Fim de jogo!', True, (200, 0, 0)), (130, 150))
-    window.blit(fonts['medium'].render(f"Pontuação final: {state['score']}", True, (255, 255, 255)), (150, 200))
-    window.blit(fonts['medium'].render('Digite seu nome:', True, (255, 255, 255)), (130, 260))
-    pygame.draw.rect(window, (255, 255, 255), (150, 300, 200, 40), 2)
-    window.blit(fonts['input'].render(state['digitar_nome'], True, (255, 255, 255)), (155, 305))
+    window.blit(fonts['large'].render('Fim de jogo!', True, (200, 0, 0)), (130, 90))
+    window.blit(fonts['medium'].render(f"Pontuação final: {state['score']}", True, (255, 255, 255)), (130, 140))
+    window.blit(fonts['medium'].render('Digite seu nome:', True, (255, 255, 255)), (130, 200))
+    pygame.draw.rect(window, (255, 255, 255), (90, 240, 300, 40), 2)
+    window.blit(fonts['input'].render(state['digitar_nome'], True, (255, 255, 255)), (155, 245))
+    dados = ranking.carregar_rankings()
+    y = 310
+    for i, e in enumerate(dados):
+        text = f"{i+1}. {e['nome']}: {e['pontuacao']}"
+        window.blit(fonts['medium'].render(text, True, (255, 255, 255)), (100, y))
+        y += 40
     pygame.draw.rect(window, (200, 200, 200), back_button)
     window.blit(fonts['medium'].render('Voltar', True, (0, 0, 0)), (back_button.x+10, back_button.y+5))
 
