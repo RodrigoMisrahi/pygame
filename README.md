@@ -1,6 +1,5 @@
 # pygame
-# pygame
 # Título do projeto: Smash Insper
 # Nomes dos membros do seu grupo: Rodrigo Mendes e Guilherme Malavazzi
-# Explicação de como rodar o jogo: o arquivo a ser executado é "joguinho.py". Ao clicar no botão jogar o usuario deverá desviar dos carros de policia (com as setas do teclado), e tentar atingir a maior pontuação
-# Link: 
+# Explicação de como rodar o jogo: Para rodar o jogo é preciso baixar todo o repositório do GitHub e abri-lo no VS Code, primeiro certifique-se de ter o Git instalado em seu computador (caso não tenha, acesse git-scm.com, baixe o instalador para o seu sistema operacional e siga as instruções de instalação). Em seguida, abra um terminal (Prompt de Comando no Windows, Terminal no macOS/Linux) e navegue até a pasta onde deseja salvar o projeto, usando o comando `cd`. Com isso pronto, execute `git clone https://github.com/RodrigoMisrahi/pygame.git` no programa do VS Code, para copiar todo o conteúdo do repositório para uma nova pasta “pygame” dentro do diretório atual. Aguarde o Git baixar todos os arquivos — ao final, você verá uma pasta chamada “pygame” com todo o código. Para abrir esse projeto no VS Code, simplesmente digite `code pygame` no mesmo terminal (caso o comando `code` não funcione, abra o VS Code normalmente, clique em “File” → “Open Folder…”, navegue até a pasta “pygame” e confirme). Ja com a pasta do “pygame” aberta entre no arquivo `joguinho.py` e no canto superior direito clique no simbolo de play.
+# Link:
