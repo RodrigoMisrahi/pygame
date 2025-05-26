@@ -1,6 +1,7 @@
 import pygame
 import random
 import ranking
+from pygame import mask
 
 # Configurações iniciais
 
@@ -35,12 +36,18 @@ def init_pygame():
 def load_assets():
     """Carrega e retorna todas as imagens do jogo"""
     assets = {}
-    assets['player'] = pygame.transform.scale(
-        pygame.image.load('assets/imagens/user.png').convert(), (70, 120)
-    )
-    assets['enemy'] = pygame.transform.scale(
-        pygame.image.load('assets/imagens/policia.png').convert(), (70, 120)
-    )
+    
+    # Player com máscara
+    player_img = pygame.image.load('assets/imagens/user.png').convert_alpha()
+    assets['player'] = pygame.transform.scale(player_img, (70, 120))
+    assets['player_mask'] = mask.from_surface(assets['player'])
+    
+    # Inimigo com máscara
+    enemy_img = pygame.image.load('assets/imagens/policia.png').convert_alpha()
+    assets['enemy'] = pygame.transform.scale(enemy_img, (70, 120))
+    assets['enemy_mask'] = mask.from_surface(assets['enemy'])
+    
+    # Demais assets
     assets['estrela'] = pygame.transform.scale(
         pygame.image.load('assets/imagens/estrela.png').convert_alpha(), (30, 30)
     )
@@ -60,7 +67,9 @@ def load_assets():
     )
     return assets
 
-# Estado e variáveis do jogo
+# Restante das funções permanecem iguais até a seção de colisão...
+
+# Estado e variáveis do jogo (igual)
 
 def reset_jogo(state, assets):
     """Reseta variáveis de jogo para novo início ou reinício"""
@@ -92,7 +101,7 @@ def criar_state():
         'input_ativo': True
     }
 
-# Spawns de inimigos e poderes
+# Spawns de inimigos e poderes (igual)
 
 def tentar_spawn(lista, max_tentativas, largura, altura, y_vel, existing):
     """Função genérica para tentar spawn em posição não colidida"""
@@ -126,14 +135,14 @@ def spawn_inimigos(state):
 def spawn_poderes(state):
     """Gerencia spawn de poderes a cada múltiplo de 1250 pontos"""
     now = pygame.time.get_ticks()
-    if state['score'] > 0 and state['score'] % 1250 == 0 and now - state['tempo_ultimo_poder'] > 2000:
+    if state['score'] > 0 and state['score'] % 750 == 0 and now - state['tempo_ultimo_poder'] > 2000:
         tipo = random.choice(list(assets['poder'].keys()))
         rect = tentar_spawn(state['poder_list'], 20, 70, 120, 0, state['enemy_list'])
         if rect:
             state['poder_list'].append({'rect': rect, 'tipo': tipo, 'velocidade': 3})
             state['tempo_ultimo_poder'] = now
 
-# Tratamento de eventos
+# Tratamento de eventos (igual)
 
 def handle_events(state, assets, fonts):
     """Captura e processa eventos de teclado e mouse para todas as telas"""
@@ -184,11 +193,20 @@ def update_game(state, assets):
     spawn_poderes(state)
 
     player_rect = pygame.Rect(state['player_x'], 720 - 120 - 30, 70, 120)
+    player_mask = assets['player_mask']
 
-    # Colisões com inimigos
+    # Colisões com inimigos 
     if not state['invulneravel']:
         for e in state['enemy_list']:
-            if player_rect.colliderect(e['rect']):
+            enemy_rect = e['rect']
+            enemy_mask = assets['enemy_mask']
+            
+            # Calcula offset entre as máscaras
+            offset_x = enemy_rect.x - player_rect.x
+            offset_y = enemy_rect.y - player_rect.y
+            
+            # Verifica colisão pixel-perfect
+            if player_mask.overlap(enemy_mask, (offset_x, offset_y)):
                 if state['escudo_ativo']:
                     state['escudo_ativo'] = False
                 else:
@@ -237,87 +255,117 @@ def update_game(state, assets):
     if state['vidas'] <= 0:
         state['estado'] = 'fim_jogo'
 
+# Botões
+
+play_button = pygame.Rect(150, 250, 200, 60)
+rankings_button = pygame.Rect(150, 350, 200, 60)
+back_button = pygame.Rect(20, 20, 100, 40)
+
 # Funções de renderização
 
 def render_inicio(window, assets, fonts):
     """Desenha a tela inicial com botões"""
     window.blit(assets['fundo_inicio'], (0, 0))
-    window.blit(fonts['large'].render('SMASH', True, (255, 255, 255)), (180, 120))
-    window.blit(fonts['large'].render('INSPER', True, (255, 255, 255)), (180, 160))
+    
+    # Título do jogo
+    titulo1 = fonts['large'].render('SMASH', True, (255, 255, 255))
+    titulo2 = fonts['large'].render('INSPER', True, (255, 255, 255))
+    window.blit(titulo1, (180, 120))
+    window.blit(titulo2, (180, 160))
+    
+    # Botões imagem
     pygame.draw.rect(window, (200, 200, 200), play_button)
     pygame.draw.rect(window, (200, 200, 200), rankings_button)
-    window.blit(fonts['large'].render('Jogar', True, (0, 0, 0)), (play_button.x+50, play_button.y+10))
-    window.blit(fonts['large'].render('Rankings', True, (0, 0, 0)), (rankings_button.x+30, rankings_button.y+10))
-
+    
+    # Texto dos botões
+    texto_jogar = fonts['large'].render('Jogar', True, (0, 0, 0))
+    texto_rankings = fonts['large'].render('Rankings', True, (0, 0, 0))
+    window.blit(texto_jogar, (play_button.x + 50, play_button.y + 10))
+    window.blit(texto_rankings, (rankings_button.x + 30, rankings_button.y + 10))
 
 def render_jogo(window, assets, fonts, state):
     """Desenha a tela de jogo incluindo jogador, inimigos e HUD"""
     window.fill((0, 0, 0))
-    # Pistas verticais
-    for x in [500 // 3, 2*500 // 3]:
+    
+    # Desenha pistas
+    for x in [500 // 3, 2 * 500 // 3]:
         for y in range(0, 720, 40):
-            pygame.draw.line(window, (255, 255, 255), (x, y), (x, y+20), 5)
-
-    # Jogador piscante se invulnerável
+            pygame.draw.line(window, (255, 255, 255), (x, y), (x, y + 20), 5)
+    
+    # Jogador
     if not (state['invulneravel'] and (pygame.time.get_ticks() // 200) % 2 == 0):
         window.blit(assets['player'], (state['player_x'], 720 - 120 - 30))
-    # Desenha escudo
+    
+    # Escudo visual
     if state['escudo_ativo']:
-        pygame.draw.rect(window, (0, 150, 255), (state['player_x']-5, 720 - 120 - 35, 80, 130), 3)
-
-    # Inimigos e poderes
+        pygame.draw.rect(window, (0, 150, 255), 
+                       (state['player_x'] - 5, 720 - 120 - 35, 80, 130), 3)
+    
+    # Inimigos
     for e in state['enemy_list']:
         window.blit(assets['enemy'], (e['rect'].x, e['rect'].y))
+    
+    # Poderes
     for p in state['poder_list']:
         window.blit(assets['poder'][p['tipo']], (p['rect'].x, p['rect'].y))
-
-    # Vidas e pontuação
+    
+    # HUD - Vidas
     for i in range(state['vidas']):
-        window.blit(assets['coracao'], (10 + i*35, 10))
-    window.blit(fonts['medium'].render(f"Pontuação: {state['score']}", True, (255, 255, 255)), (500-200, 10))
-
-    # Estrelas de conquista
-    estrelas = min(state['score']//1000, 5)
+        window.blit(assets['coracao'], (10 + i * 35, 10))
+    
+    # Pontuação
+    texto_score = fonts['medium'].render(f"Pontuação: {state['score']}", True, (255, 255, 255))
+    window.blit(texto_score, (500 - 200, 10))
+    
+    # Estrelas de progresso
+    estrelas = min(state['score'] // 1000, 5)
     for i in range(estrelas):
-        window.blit(assets['estrela'], (500-(i+1)*35, 40))
-
+        window.blit(assets['estrela'], (500 - (i + 1) * 35, 40))
 
 def render_rankings(window, fonts):
     """Desenha a tela de rankings com top 10"""
     window.blit(assets['fundo_inicio'], (0, 0))
-    window.blit(fonts['large'].render('Top 10 Rankings', True, (255, 255, 255)), (150, 50))
+    
+    # Título
+    titulo = fonts['large'].render('Top 10 Rankings', True, (255, 255, 255))
+    window.blit(titulo, (150, 50))
+    
+    # Carrega dados
     dados = ranking.carregar_rankings()
     y = 120
-    for i, e in enumerate(dados):
-        text = f"{i+1}. {e['nome']}: {e['pontuacao']}"
-        window.blit(fonts['medium'].render(text, True, (255, 255, 255)), (100, y))
+    for i, entry in enumerate(dados):
+        texto = f"{i+1}. {entry['nome']}: {entry['pontuacao']}"
+        window.blit(fonts['medium'].render(texto, True, (255, 255, 255)), (100, y))
         y += 40
+    
+    # Botão voltar
     pygame.draw.rect(window, (200, 200, 200), back_button)
-    window.blit(fonts['medium'].render('Voltar', True, (0, 0, 0)), (back_button.x+10, back_button.y+5))
-
+    window.blit(fonts['medium'].render('Voltar', True, (0, 0, 0)), (back_button.x + 10, back_button.y + 5))
 
 def render_fim_jogo(window, assets, fonts, state):
     """Desenha a tela de fim de jogo e input de nome"""
     window.fill((0, 0, 0))
+    
+    # Mensagens principais
     window.blit(fonts['large'].render('Fim de jogo!', True, (200, 0, 0)), (130, 90))
     window.blit(fonts['medium'].render(f"Pontuação final: {state['score']}", True, (255, 255, 255)), (130, 140))
+    
+    # Input de nome
     window.blit(fonts['medium'].render('Digite seu nome:', True, (255, 255, 255)), (130, 200))
     pygame.draw.rect(window, (255, 255, 255), (90, 240, 300, 40), 2)
     window.blit(fonts['input'].render(state['digitar_nome'], True, (255, 255, 255)), (155, 245))
+    
+    # Rankings
     dados = ranking.carregar_rankings()
     y = 310
-    for i, e in enumerate(dados):
-        text = f"{i+1}. {e['nome']}: {e['pontuacao']}"
-        window.blit(fonts['medium'].render(text, True, (255, 255, 255)), (100, y))
+    for i, entry in enumerate(dados):
+        texto = f"{i+1}. {entry['nome']}: {entry['pontuacao']}"
+        window.blit(fonts['medium'].render(texto, True, (255, 255, 255)), (100, y))
         y += 40
+    
+    # Botão voltar
     pygame.draw.rect(window, (200, 200, 200), back_button)
-    window.blit(fonts['medium'].render('Voltar', True, (0, 0, 0)), (back_button.x+10, back_button.y+5))
-
-# Constantes globais
-
-play_button = pygame.Rect(150, 250, 200, 60)
-rankings_button = pygame.Rect(150, 350, 200, 60)
-back_button = pygame.Rect(20, 20, 100, 40)
+    window.blit(fonts['medium'].render('Voltar', True, (0, 0, 0)), (back_button.x + 10, back_button.y + 5))
 
 # Função principal
 
@@ -348,6 +396,7 @@ def main():
             # Atualiza lógica do jogo
             update_game(state, assets)
 
+
         # Renderização de cada tela
         if state['estado'] == 'inicio':
             render_inicio(window, assets, fonts)
@@ -361,8 +410,6 @@ def main():
         pygame.display.update()
 
     pygame.quit()
+    
 if __name__ == '__main__':
     main()
-    
-#som de colisão
-#arrumar a hitbox
