@@ -4,7 +4,6 @@ import ranking
 from pygame import mask
 
 # Configurações iniciais
-
 def init_pygame():
     """Inicializa o pygame, mixer e configura a tela e fontes"""
     pygame.init()
@@ -32,7 +31,6 @@ def init_pygame():
     return tela, fonts, som
 
 # Carregamento de imagens
-
 def load_assets():
     """Carrega e retorna todas as imagens do jogo"""
     assets = {}
@@ -67,10 +65,7 @@ def load_assets():
     )
     return assets
 
-# Restante das funções permanecem iguais até a seção de colisão...
-
-# Estado e variáveis do jogo (igual)
-
+# Estado e variáveis do jogo
 def reset_jogo(state, assets):
     """Reseta variáveis de jogo para novo início ou reinício"""
     state.update({
@@ -92,7 +87,6 @@ def reset_jogo(state, assets):
         'menos_carros_inicio': 0
     })
 
-
 def criar_state():
     """Cria dicionário inicial de estado"""
     return {
@@ -101,8 +95,7 @@ def criar_state():
         'input_ativo': True
     }
 
-# Spawns de inimigos e poderes (igual)
-
+# Spawns de inimigos e poderes
 def tentar_spawn(lista, max_tentativas, largura, altura, y_vel, existing):
     """Função genérica para tentar spawn em posição não colidida"""
     for _ in range(max_tentativas):
@@ -111,7 +104,6 @@ def tentar_spawn(lista, max_tentativas, largura, altura, y_vel, existing):
         if not any(rect.colliderect(e['rect']) for e in existing):
             return rect
     return None
-
 
 def spawn_inimigos(state):
     """Gerencia spawn de inimigos baseado em score e timers"""
@@ -131,7 +123,6 @@ def spawn_inimigos(state):
             state['enemy_list'].append({'rect': rect, 'velocidade': random.randint(vel_min, vel_max)})
             state['tempo_ultimo_spawn'] = now
 
-
 def spawn_poderes(state):
     """Gerencia spawn de poderes a cada múltiplo de 1250 pontos"""
     now = pygame.time.get_ticks()
@@ -142,13 +133,19 @@ def spawn_poderes(state):
             state['poder_list'].append({'rect': rect, 'tipo': tipo, 'velocidade': 3})
             state['tempo_ultimo_poder'] = now
 
-# Tratamento de eventos (igual)
+# Botões
+play_button = pygame.Rect(150, 250, 200, 60)
+rankings_button = pygame.Rect(150, 350, 200, 60)
+howto_button = pygame.Rect(150, 450, 200, 60)  # Novo botão
+back_button = pygame.Rect(20, 20, 100, 40)
 
+# Tratamento de eventos
 def handle_events(state, assets, fonts):
     """Captura e processa eventos de teclado e mouse para todas as telas"""
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             return False
+        
         # Clique de mouse
         if event.type == pygame.MOUSEBUTTONUP:
             x, y = event.pos
@@ -159,10 +156,14 @@ def handle_events(state, assets, fonts):
                     state['estado'] = 'jogo'
                 elif rankings_button.collidepoint((x, y)):
                     state['estado'] = 'rankings'
+                elif howto_button.collidepoint((x, y)):  # Novo caso
+                    state['estado'] = 'como_jogar'
+            
             # Botões de voltar
-            elif state['estado'] in ['rankings', 'fim_jogo']:
+            elif state['estado'] in ['rankings', 'fim_jogo', 'como_jogar']:
                 if back_button.collidepoint((x, y)):
                     state['estado'] = 'inicio'
+        
         # Digitação no fim de jogo
         if state['estado'] == 'fim_jogo' and event.type == pygame.KEYDOWN and state['input_ativo']:
             if event.key == pygame.K_RETURN and state['digitar_nome'].strip():
@@ -176,7 +177,6 @@ def handle_events(state, assets, fonts):
     return True
 
 # Lógica de atualização
-
 def update_game(state, assets):
     """Move inimigos, poderes, trata colisões e gerencia timers de status"""
     now = pygame.time.get_ticks()
@@ -255,14 +255,7 @@ def update_game(state, assets):
     if state['vidas'] <= 0:
         state['estado'] = 'fim_jogo'
 
-# Botões
-
-play_button = pygame.Rect(150, 250, 200, 60)
-rankings_button = pygame.Rect(150, 350, 200, 60)
-back_button = pygame.Rect(20, 20, 100, 40)
-
 # Funções de renderização
-
 def render_inicio(window, assets, fonts):
     """Desenha a tela inicial com botões"""
     window.blit(assets['fundo_inicio'], (0, 0))
@@ -276,12 +269,15 @@ def render_inicio(window, assets, fonts):
     # Botões imagem
     pygame.draw.rect(window, (200, 200, 200), play_button)
     pygame.draw.rect(window, (200, 200, 200), rankings_button)
+    pygame.draw.rect(window, (200, 200, 200), howto_button)  # Novo botão
     
     # Texto dos botões
     texto_jogar = fonts['large'].render('Jogar', True, (0, 0, 0))
     texto_rankings = fonts['large'].render('Rankings', True, (0, 0, 0))
+    texto_howto = fonts['large'].render('Instruções', True, (0, 0, 0))
     window.blit(texto_jogar, (play_button.x + 50, play_button.y + 10))
     window.blit(texto_rankings, (rankings_button.x + 30, rankings_button.y + 10))
+    window.blit(texto_howto, (howto_button.x + 20, howto_button.y + 10))
 
 def render_jogo(window, assets, fonts, state):
     """Desenha a tela de jogo incluindo jogador, inimigos e HUD"""
@@ -342,6 +338,49 @@ def render_rankings(window, fonts):
     pygame.draw.rect(window, (200, 200, 200), back_button)
     window.blit(fonts['medium'].render('Voltar', True, (0, 0, 0)), (back_button.x + 10, back_button.y + 5))
 
+def render_howto(window, assets, fonts):
+    """Desenha a tela de instruções do jogo"""
+    # Fundo igual ao inicial
+    window.blit(assets['fundo_inicio'], (0, 0))
+    
+    # Overlay semi-transparente
+    overlay = pygame.Surface((500, 720), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 200))  # Preto com 200/255 de opacidade
+    window.blit(overlay, (0, 0))
+    
+    # Título
+    titulo = fonts['large'].render('Como Jogar', True, (255, 255, 255))
+    window.blit(titulo, (160, 50))
+    
+    # Textos explicativos
+    textos = [
+        'Objetivo:',
+        'O jogo consiste em uma fuga policial',
+        'Desvie dos carros da policia usando',
+        'as setas direita/esquerda.',
+        'Colete poderes para ajudar na fuga!',
+        '',
+        'Poderes:',
+        'Coração - Vida extra',
+        'Escudo - Bloqueia uma colisão',
+        'Menos - Reduz quantidade de carros',
+        'Caracol - Diminui velocidade inimiga'
+    ]
+    
+    y = 120
+    for linha in textos:
+        if ':' in linha:
+            cor = (255, 255, 0) if linha.endswith(':') else (255, 255, 255)
+            texto = fonts['medium'].render(linha, True, cor)
+        else:
+            texto = fonts['medium'].render(linha, True, (255, 255, 255))
+        window.blit(texto, (50, y))
+        y += 40 if ':' in linha else 30
+    
+    # Botão voltar
+    pygame.draw.rect(window, (200, 200, 200), back_button)
+    window.blit(fonts['medium'].render('Voltar', True, (0, 0, 0)), (back_button.x + 10, back_button.y + 5))
+
 def render_fim_jogo(window, assets, fonts, state):
     """Desenha a tela de fim de jogo e input de nome"""
     window.fill((0, 0, 0))
@@ -368,7 +407,6 @@ def render_fim_jogo(window, assets, fonts, state):
     window.blit(fonts['medium'].render('Voltar', True, (0, 0, 0)), (back_button.x + 10, back_button.y + 5))
 
 # Função principal
-
 def main():
     # Inicialização geral
     window, fonts, som_colisao = init_pygame()
@@ -396,7 +434,6 @@ def main():
             # Atualiza lógica do jogo
             update_game(state, assets)
 
-
         # Renderização de cada tela
         if state['estado'] == 'inicio':
             render_inicio(window, assets, fonts)
@@ -404,6 +441,8 @@ def main():
             render_jogo(window, assets, fonts, state)
         elif state['estado'] == 'rankings':
             render_rankings(window, fonts)
+        elif state['estado'] == 'como_jogar':  # Nova tela
+            render_howto(window, assets, fonts)
         elif state['estado'] == 'fim_jogo':
             render_fim_jogo(window, assets, fonts, state)
 
