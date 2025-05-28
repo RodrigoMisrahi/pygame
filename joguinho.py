@@ -3,7 +3,7 @@ import random
 import ranking
 from pygame import mask
 
-# Configurações iniciais
+# Configurações iniciais 
 def init_pygame():
     """Inicializa o pygame, mixer e configura a tela e fontes"""
     pygame.init()
@@ -44,6 +44,12 @@ def load_assets():
     enemy_img = pygame.image.load('assets/imagens/policia.png').convert_alpha()
     assets['enemy'] = pygame.transform.scale(enemy_img, (70, 120))
     assets['enemy_mask'] = mask.from_surface(assets['enemy'])
+    
+    # Título do jogo
+    assets['nome'] = pygame.transform.scale(
+        pygame.image.load('assets/imagens/nome.png').convert_alpha(), 
+        (300, 220)  
+    )
     
     # Demais assets
     assets['estrela'] = pygame.transform.scale(
@@ -260,16 +266,15 @@ def render_inicio(window, assets, fonts):
     """Desenha a tela inicial com botões"""
     window.blit(assets['fundo_inicio'], (0, 0))
     
-    # Título do jogo
-    titulo1 = fonts['large'].render('SMASH', True, (255, 255, 255))
-    titulo2 = fonts['large'].render('INSPER', True, (255, 255, 255))
-    window.blit(titulo1, (180, 120))
-    window.blit(titulo2, (180, 160))
+    # Título do jogo com imagem 
+    nome_img = assets['nome']
+    x_pos = (500 - nome_img.get_width()) // 2  # Centraliza horizontalmente
+    window.blit(nome_img, (x_pos, 30))  
     
     # Botões imagem
     pygame.draw.rect(window, (200, 200, 200), play_button)
     pygame.draw.rect(window, (200, 200, 200), rankings_button)
-    pygame.draw.rect(window, (200, 200, 200), howto_button)  # Novo botão
+    pygame.draw.rect(window, (200, 200, 200), howto_button)
     
     # Texto dos botões
     texto_jogar = fonts['large'].render('Jogar', True, (0, 0, 0))
